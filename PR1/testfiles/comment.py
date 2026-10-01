@@ -1,0 +1,1 @@
+print("file without comments")
