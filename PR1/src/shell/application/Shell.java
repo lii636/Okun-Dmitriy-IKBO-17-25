@@ -1,14 +1,17 @@
 package shell.application;
 
-import shell.command.CommandResult;
-import shell.exception.ShellException;
 import shell.command.CommandRegistry;
+import shell.command.CommandResult;
+import shell.configuration.Config;
+import shell.exception.ShellException;
 import shell.parsing.LineParser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,14 +19,23 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class Shell {
-    private static final String VFS_NAME = "default";
     private static final String PROMPT_SUFFIX = "> ";
 
     private final CommandRegistry commands;
     private final LineParser parser;
+    private final Config config;
 
     public void run(Session session) {
-        runInteractive(session);
+        Path script = config.scriptPath();
+        if (script != null) {
+            requireScript(script);
+        }
+        session.err().println(config.dump(Config.DEFAULT_VFS_NAME));
+        if (script == null) {
+            runInteractive(session);
+            return;
+        }
+        runScript(script, session);
     }
 
     private void runInteractive(Session session) {
@@ -33,6 +45,15 @@ public class Shell {
             session.out().flush();
             String line = readLine(reader, session.err());
             if (line == null || dispatch(line, session)) {
+                return;
+            }
+        }
+    }
+
+    private void runScript(Path script, Session session) {
+        for (String line : readScript(script)) {
+            session.out().println(prompt() + line);
+            if (dispatch(line, session)) {
                 return;
             }
         }
@@ -72,7 +93,21 @@ public class Shell {
         }
     }
 
+    private List<String> readScript(Path script) {
+        try {
+            return Files.readAllLines(script);
+        } catch (IOException exception) {
+            throw new ShellException("cannot read script: " + script, exception);
+        }
+    }
+
+    private void requireScript(Path script) {
+        if (!Files.isRegularFile(script)) {
+            throw new ShellException("script file not found: " + script);
+        }
+    }
+
     private String prompt() {
-        return VFS_NAME + PROMPT_SUFFIX;
+        return Config.DEFAULT_VFS_NAME + PROMPT_SUFFIX;
     }
 }
