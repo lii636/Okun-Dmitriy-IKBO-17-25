@@ -4,14 +4,16 @@ import shell.application.Session;
 import shell.application.Shell;
 import shell.command.Command;
 import shell.command.CommandRegistry;
-import shell.command.internal.CdCommand;
-import shell.command.internal.ConfDumpCommand;
-import shell.command.internal.ExitCommand;
-import shell.command.internal.LsCommand;
+import shell.command.builtin.CdCommand;
+import shell.command.builtin.ConfDumpCommand;
+import shell.command.builtin.ExitCommand;
+import shell.command.builtin.LsCommand;
 import shell.configuration.ArgsParser;
 import shell.configuration.Config;
 import shell.exception.ShellException;
 import shell.parsing.LineParser;
+import shell.vfs.VirtualFileSystem;
+import shell.vfs.XmlVfsLoader;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -20,8 +22,6 @@ import java.util.List;
 public class Main {
     private static final int SUCCESS = 0;
     private static final int ERROR = 1;
-    private static final String USAGE =
-        "Usage: shell [--vfs PATH] [--script PATH] [--help]";
 
     public static void main(String[] args) {
         int code = run(args, System.in, System.out, System.err);
@@ -40,26 +40,30 @@ public class Main {
     }
 
     private static int start(String[] args, Session session) {
-        ArgsParser.Result result = new ArgsParser().parse(args);
-        if (result instanceof ArgsParser.Help) {
-            session.out().println(USAGE);
-            return SUCCESS;
-        }
-        Config config = ((ArgsParser.Start) result).config();
+        Config config = new ArgsParser().parse(args);
+        VirtualFileSystem filesystem = loadFilesystem(config);
         Shell shell = new Shell(
-            new CommandRegistry(commands(config)),
+            new CommandRegistry(commands(config, filesystem)),
             new LineParser(),
-            config
+            config,
+            filesystem
         );
         shell.run(session);
         return SUCCESS;
     }
 
-    private static List<Command> commands(Config config) {
+    private static VirtualFileSystem loadFilesystem(Config config) {
+        if (config.vfsPath() == null) {
+            return VirtualFileSystem.empty();
+        }
+        return new XmlVfsLoader().load(config.vfsPath());
+    }
+
+    private static List<Command> commands(Config config, VirtualFileSystem filesystem) {
         return List.of(
-            new LsCommand(),
-            new CdCommand(),
-            new ConfDumpCommand(config),
+            new LsCommand(filesystem),
+            new CdCommand(filesystem),
+            new ConfDumpCommand(config, filesystem),
             new ExitCommand()
         );
     }

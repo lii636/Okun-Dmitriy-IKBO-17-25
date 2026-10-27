@@ -1,0 +1,20 @@
+conf-dump
+ls
+cd a
+ls
+cd b
+ls
+cd c
+ls
+cd note.txt
+ls note.txt
+cd ..
+cd ..
+cd /
+ls a/b/c
+cd missing
+ls missing
+ls "$HOME"
+not-a-command
+""
+exit

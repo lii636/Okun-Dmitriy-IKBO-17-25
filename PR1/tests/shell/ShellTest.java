@@ -15,18 +15,27 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ShellTest {
     @Test
-    void printsHelp() {
+    void rejectsUnsupportedArguments() {
         Capture capture = run(new String[] {"--help"}, "");
 
-        assertEquals(0, capture.code());
-        assertTrue(capture.out().contains("Usage:"));
-        assertTrue(capture.err().isEmpty());
+        assertEquals(1, capture.code());
+        assertTrue(capture.out().isEmpty());
+        assertTrue(capture.err().contains("unknown option: --help"));
     }
 
     @Test
-    void reportsMissingScript() {
+    void reportsVfsAndScriptStartupFailures() {
+        Capture vfs = run(new String[] {"--vfs", "missing.xml"}, "");
+        Capture invalidVfs = run(
+            new String[] {"--vfs", "fixtures/vfs/invalid.xml"},
+            ""
+        );
         Capture script = run(new String[] {"--script", "missing.txt"}, "");
 
+        assertEquals(1, vfs.code());
+        assertTrue(vfs.err().contains("vfs file not found"));
+        assertEquals(1, invalidVfs.code());
+        assertTrue(invalidVfs.err().contains("invalid vfs xml"));
         assertEquals(1, script.code());
         assertTrue(script.err().contains("script file not found"));
     }
@@ -40,22 +49,11 @@ class ShellTest {
     }
 
     @Test
-    void recordsVfsPathWithoutOpeningIt() {
-        Capture capture = run(new String[] {"--vfs", "missing.xml"}, "exit\n");
+    void interactiveModePrintsPromptAndRecoversFromErrors() {
+        Capture capture = run(new String[0], "unknown\nconf-dump\nexit\n");
 
         assertEquals(0, capture.code());
-        assertTrue(capture.err().contains("vfs=missing.xml"));
-        assertTrue(capture.err().contains("vfs-name=default"));
-        assertFalse(capture.err().contains("vfs file not found"));
-    }
-
-    @Test
-    void interactiveModePrintsPromptStubsAndRecoversFromErrors() {
-        Capture capture = run(new String[0], "unknown\nls a b\nconf-dump\nexit\n");
-
-        assertEquals(0, capture.code());
-        assertTrue(capture.out().contains("default> "));
-        assertTrue(capture.out().contains("ls: a b"));
+        assertTrue(capture.out().startsWith("default> default> "));
         assertTrue(capture.out().contains("vfs-name=default"));
         assertTrue(capture.err().contains("unknown command: unknown"));
     }
@@ -63,14 +61,13 @@ class ShellTest {
     @Test
     void scriptEchoesLinesContinuesAfterErrorsAndStopsOnExit(@TempDir Path directory) throws Exception {
         Path script = directory.resolve("commands.txt");
-        Files.writeString(script, "unknown\nls a b\nexit\nconf-dump\n");
+        Files.writeString(script, "unknown\nls\nexit\nconf-dump\n");
 
         Capture capture = run(new String[] {"--script", script.toString()}, "");
 
         assertEquals(0, capture.code());
         assertTrue(capture.out().contains("default> unknown"));
-        assertTrue(capture.out().contains("default> ls a b"));
-        assertTrue(capture.out().contains("ls: a b"));
+        assertTrue(capture.out().contains("default> ls"));
         assertFalse(capture.out().contains("default> conf-dump"));
         assertTrue(capture.err().contains("unknown command: unknown"));
         assertTrue(capture.err().contains("script=" + script));
