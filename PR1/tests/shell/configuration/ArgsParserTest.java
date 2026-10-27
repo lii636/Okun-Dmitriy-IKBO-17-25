@@ -7,7 +7,6 @@ import shell.exception.ShellException;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -16,29 +15,21 @@ class ArgsParserTest {
 
     @Test
     void readsOptionalPaths() {
-        ArgsParser.Start both = assertInstanceOf(
-            ArgsParser.Start.class,
-            parser.parse(new String[] {"--vfs", "tree.xml", "--script", "start.txt"})
+        Config both = parser.parse(
+            new String[] {"--vfs", "tree.xml", "--script", "start.txt"}
         );
-        ArgsParser.Start scriptOnly = assertInstanceOf(
-            ArgsParser.Start.class,
-            parser.parse(new String[] {"--script", "start.txt"})
-        );
+        Config scriptOnly = parser.parse(new String[] {"--script", "start.txt"});
 
-        assertEquals(Path.of("tree.xml"), both.config().vfsPath());
-        assertEquals(Path.of("start.txt"), both.config().scriptPath());
-        assertNull(scriptOnly.config().vfsPath());
-    }
-
-    @Test
-    void recognizesHelp() {
-        assertInstanceOf(ArgsParser.Help.class, parser.parse(new String[] {"--help"}));
+        assertEquals(Path.of("tree.xml"), both.vfsPath());
+        assertEquals(Path.of("start.txt"), both.scriptPath());
+        assertNull(scriptOnly.vfsPath());
     }
 
     @Test
     void rejectsInvalidArguments() {
         assertThrows(ShellException.class, () -> parser.parse(new String[] {"--vfs"}));
         assertThrows(ShellException.class, () -> parser.parse(new String[] {"--unknown"}));
+        assertThrows(ShellException.class, () -> parser.parse(new String[] {"--help"}));
         assertThrows(ShellException.class, () -> parser.parse(new String[] {"extra"}));
     }
 

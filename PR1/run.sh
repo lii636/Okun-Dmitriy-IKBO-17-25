@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "$#" -eq 0 ]; then
-  exec ./gradlew run --no-daemon --console=plain
-fi
+project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+cd "$project_dir"
 
-args=
-for argument in "$@"; do
-  args="$args '$argument'"
-done
-
-exec ./gradlew run --no-daemon --console=plain --args="${args# }"
+./gradlew installDist --no-daemon --console=plain
+exec ./build/install/shell-emulator/bin/shell-emulator "$@"

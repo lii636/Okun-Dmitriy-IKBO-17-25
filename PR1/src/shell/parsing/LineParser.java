@@ -9,8 +9,6 @@ import shell.exception.ShellException;
 
 @RequiredArgsConstructor
 public class LineParser {
-    private static final int NOT_FOUND = -1;
-
     private final Function<String, String> environment;
 
     public LineParser() {
@@ -86,7 +84,7 @@ public class LineParser {
 
     private int appendBraced(String line, int start, StringBuilder token) {
         int end = line.indexOf('}', start);
-        if (end == NOT_FOUND) {
+        if (end < 0) {
             throw new ShellException("unclosed variable");
         }
         String name = line.substring(start, end);

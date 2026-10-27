@@ -6,19 +6,15 @@ import java.nio.file.Path;
 import shell.exception.ShellException;
 
 public class ArgsParser {
-    private static final String HELP = "--help";
     private static final String VFS = "--vfs";
     private static final String SCRIPT = "--script";
 
-    public Result parse(String[] args) {
+    public Config parse(String[] args) {
         Path vfs = null;
         Path script = null;
         int index = 0;
         while (index < args.length) {
             String option = args[index];
-            if (HELP.equals(option)) {
-                return new Help();
-            }
             String value = valueAfter(args, index);
             if (VFS.equals(option)) {
                 vfs = path(value);
@@ -29,7 +25,7 @@ public class ArgsParser {
             }
             index += 2;
         }
-        return new Start(new Config(vfs, script));
+        return new Config(vfs, script);
     }
 
     private String valueAfter(String[] args, int optionIndex) {
@@ -57,12 +53,4 @@ public class ArgsParser {
         throw new ShellException(kind + argument);
     }
 
-    public sealed interface Result permits Help, Start {
-    }
-
-    public record Help() implements Result {
-    }
-
-    public record Start(Config config) implements Result {
-    }
 }

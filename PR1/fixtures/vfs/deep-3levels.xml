@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vfs name="deep">
+  <dir name="a">
+    <file name="top.txt">top</file>
+    <dir name="b">
+      <file name="mid.txt">mid</file>
+      <dir name="c">
+        <file name="note.txt">deep-file</file>
+      </dir>
+    </dir>
+  </dir>
+</vfs>

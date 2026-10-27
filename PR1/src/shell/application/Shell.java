@@ -5,6 +5,7 @@ import shell.command.CommandResult;
 import shell.configuration.Config;
 import shell.exception.ShellException;
 import shell.parsing.LineParser;
+import shell.vfs.VirtualFileSystem;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,13 +25,14 @@ public class Shell {
     private final CommandRegistry commands;
     private final LineParser parser;
     private final Config config;
+    private final VirtualFileSystem filesystem;
 
     public void run(Session session) {
         Path script = config.scriptPath();
         if (script != null) {
             requireScript(script);
         }
-        session.err().println(config.dump(Config.DEFAULT_VFS_NAME));
+        session.err().println(config.dump(filesystem.name()));
         if (script == null) {
             runInteractive(session);
             return;
@@ -108,6 +110,6 @@ public class Shell {
     }
 
     private String prompt() {
-        return Config.DEFAULT_VFS_NAME + PROMPT_SUFFIX;
+        return filesystem.name() + PROMPT_SUFFIX;
     }
 }

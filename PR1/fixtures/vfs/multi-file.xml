@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vfs name="multi">
+  <dir name="docs">
+    <file name="a.txt">alpha</file>
+    <file name="b.txt">beta</file>
+  </dir>
+  <file name="bin.dat" encoding="base64">aGVsbG8=</file>
+</vfs>
