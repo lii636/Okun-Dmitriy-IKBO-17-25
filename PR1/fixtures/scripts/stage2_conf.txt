@@ -1,0 +1,6 @@
+conf-dump
+ls
+cd nowhere
+not-a-command
+""
+exit

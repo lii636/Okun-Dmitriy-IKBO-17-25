@@ -1,4 +1,4 @@
-package shell.command.builtin;
+package shell.command.internal;
 
 import shell.command.Command;
 import shell.command.CommandResult;
