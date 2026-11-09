@@ -5,20 +5,43 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Test;
 
 import depgraph.Main;
 import depgraph.configuration.Config;
+import depgraph.graph.BfsGraphBuilder;
+import depgraph.graph.ReverseDepsFinder;
 import depgraph.model.Dependency;
+import depgraph.render.AsciiTreeRenderer;
+import depgraph.render.GraphImagePresenter;
+import depgraph.render.PlantUmlRenderer;
 import depgraph.repository.PackageRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AppTest {
+    private static final String BRANCH_PLANTUML = """
+        @startuml
+        left to right direction
+        rectangle "A"
+        rectangle "B"
+        rectangle "C"
+        "A" --> "B"
+        "A" --> "C"
+        @enduml
+        """;
+
+    private static final String BRANCH_ASCII = """
+        A
+        ├── B
+        └── C
+        """;
+
     @Test
-    void printsBfsVisitOrder() {
+    void printsPlantUmlAndPresentsImage() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         Session session = new Session(
@@ -26,40 +49,35 @@ class AppTest {
             new PrintStream(err, true, StandardCharsets.UTF_8)
         );
         Config config = new Config("A", "unused", "1", true, false, false);
-        Map<String, List<String>> edges = Map.of(
-            "A", List.of("B", "C"),
-            "B", List.of(),
-            "C", List.of()
-        );
-        PackageRepository repository = (name, version) -> edges.getOrDefault(name, List.of())
-            .stream()
-            .map(Dependency::new)
-            .toList();
+        AtomicBoolean presented = new AtomicBoolean(false);
+        GraphImagePresenter presenter = (plantUml, ignored) -> {
+            presented.set(true);
+            assertEquals(BRANCH_PLANTUML, plantUml);
+        };
 
-        new App(config, repository).run(session);
+        newApp(config, branchRepository(), presenter).run(session);
 
-        assertEquals("A\nB\nC\n", out.toString(StandardCharsets.UTF_8));
+        assertEquals(BRANCH_PLANTUML, out.toString(StandardCharsets.UTF_8));
         assertEquals("", err.toString(StandardCharsets.UTF_8));
+        assertTrue(presented.get());
     }
 
     @Test
-    void mainRunWalksTestRepoFixture() {
+    void printsAsciiTreeWhenEnabled() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
-
-        int code = Main.run(
-            new String[] {
-                "--package", "A",
-                "--repo", "fixtures/repos/linear.txt",
-                "--version", "1",
-                "--test-repo"
-            },
+        Session session = new Session(
             new PrintStream(out, true, StandardCharsets.UTF_8),
             new PrintStream(err, true, StandardCharsets.UTF_8)
         );
+        Config config = new Config("A", "unused", "1", true, true, false);
 
-        assertEquals(0, code);
-        assertEquals("A\nB\nC\n", out.toString(StandardCharsets.UTF_8));
+        newApp(config, branchRepository(), (plantUml, ignored) -> { }).run(session);
+
+        assertEquals(
+            BRANCH_PLANTUML + BRANCH_ASCII,
+            out.toString(StandardCharsets.UTF_8)
+        );
         assertEquals("", err.toString(StandardCharsets.UTF_8));
     }
 
@@ -126,5 +144,33 @@ class AppTest {
             "missing required option: --repo\n",
             err.toString(StandardCharsets.UTF_8)
         );
+    }
+
+    private static App newApp(
+        Config config,
+        PackageRepository repository,
+        GraphImagePresenter presenter
+    ) {
+        return new App(
+            config,
+            repository,
+            new BfsGraphBuilder(),
+            new ReverseDepsFinder(),
+            new PlantUmlRenderer(),
+            new AsciiTreeRenderer(),
+            presenter
+        );
+    }
+
+    private static PackageRepository branchRepository() {
+        Map<String, List<String>> edges = Map.of(
+            "A", List.of("B", "C"),
+            "B", List.of(),
+            "C", List.of()
+        );
+        return (name, version) -> edges.getOrDefault(name, List.of())
+            .stream()
+            .map(Dependency::new)
+            .toList();
     }
 }

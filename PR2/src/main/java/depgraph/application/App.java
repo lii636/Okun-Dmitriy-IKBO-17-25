@@ -7,6 +7,10 @@ import depgraph.exception.DepgraphException;
 import depgraph.graph.BfsGraphBuilder;
 import depgraph.graph.DependencyGraph;
 import depgraph.graph.ReverseDepsFinder;
+import depgraph.render.AsciiTreeRenderer;
+import depgraph.render.GraphImagePresenter;
+import depgraph.render.PlantUmlJarRenderer;
+import depgraph.render.PlantUmlRenderer;
 import depgraph.repository.FilePackageRepository;
 import depgraph.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +21,20 @@ public class App {
     private final PackageRepository repository;
     private final BfsGraphBuilder graphBuilder;
     private final ReverseDepsFinder reverseDepsFinder;
+    private final PlantUmlRenderer plantUmlRenderer;
+    private final AsciiTreeRenderer asciiTreeRenderer;
+    private final GraphImagePresenter imagePresenter;
 
     public App(Config config, PackageRepository repository) {
-        this(config, repository, new BfsGraphBuilder(), new ReverseDepsFinder());
+        this(
+            config,
+            repository,
+            new BfsGraphBuilder(),
+            new ReverseDepsFinder(),
+            new PlantUmlRenderer(),
+            new AsciiTreeRenderer(),
+            new PlantUmlJarRenderer()
+        );
     }
 
     public void run(Session session) {
@@ -32,7 +47,12 @@ public class App {
             config.packageName(),
             config.version()
         );
-        printLines(session, graph.visitOrder());
+        String plantUml = plantUmlRenderer.render(graph);
+        session.out().print(plantUml);
+        imagePresenter.present(plantUml, session);
+        if (config.asciiTree()) {
+            session.out().print(asciiTreeRenderer.render(graph));
+        }
     }
 
     private List<String> reverseDependents() {

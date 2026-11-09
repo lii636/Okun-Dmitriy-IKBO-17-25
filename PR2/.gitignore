@@ -5,4 +5,5 @@ build/
 *.class
 out/
 bin/
+tools/
 .DS_Store

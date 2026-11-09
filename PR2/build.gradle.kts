@@ -40,14 +40,3 @@ application {
 tasks.test {
     useJUnitPlatform()
 }
-
-sourceSets {
-    main {
-        java.setSrcDirs(listOf("src"))
-        resources.setSrcDirs(listOf("resources"))
-    }
-    test {
-        java.setSrcDirs(listOf("tests"))
-        resources.setSrcDirs(listOf("test-resources"))
-    }
-}
