@@ -7,6 +7,9 @@ import depgraph.application.Session;
 import depgraph.configuration.ArgsParser;
 import depgraph.configuration.Config;
 import depgraph.exception.DepgraphException;
+import depgraph.repository.JdkHttpTransport;
+import depgraph.repository.PackageRepositories;
+import depgraph.repository.PackageRepository;
 
 public class Main {
     private static final int SUCCESS = 0;
@@ -38,7 +41,11 @@ public class Main {
             return SUCCESS;
         }
         Config config = ((ArgsParser.Start) result).config();
-        new App(config).run(session);
+        PackageRepository repository = PackageRepositories.from(
+            config,
+            new JdkHttpTransport()
+        );
+        new App(config, repository).run(session);
         return SUCCESS;
     }
 }

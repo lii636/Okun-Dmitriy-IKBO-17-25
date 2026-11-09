@@ -27,6 +27,8 @@ dependencies {
     testCompileOnly(lombok)
     testAnnotationProcessor(lombok)
 
+    implementation("com.google.code.gson:gson:2.13.1")
+
     testImplementation("org.junit.jupiter:junit-jupiter:6.0.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.2")
 }
