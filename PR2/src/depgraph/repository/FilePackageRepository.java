@@ -3,8 +3,11 @@ package depgraph.repository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import depgraph.exception.DepgraphException;
 import depgraph.model.Dependency;
@@ -27,6 +30,10 @@ public class FilePackageRepository implements PackageRepository {
             throw new DepgraphException("unknown package: " + packageName);
         }
         return dependencies;
+    }
+
+    public Set<String> packageNames() {
+        return Collections.unmodifiableSet(new LinkedHashSet<>(packages.keySet()));
     }
 
     private static Map<String, List<Dependency>> load(Path path) {

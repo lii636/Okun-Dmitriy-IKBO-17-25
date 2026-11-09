@@ -14,6 +14,7 @@ import depgraph.model.Dependency;
 import depgraph.repository.PackageRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AppTest {
     @Test
@@ -24,7 +25,7 @@ class AppTest {
             new PrintStream(out, true, StandardCharsets.UTF_8),
             new PrintStream(err, true, StandardCharsets.UTF_8)
         );
-        Config config = new Config("A", "unused", "1", true, false);
+        Config config = new Config("A", "unused", "1", true, false, false);
         Map<String, List<String>> edges = Map.of(
             "A", List.of("B", "C"),
             "B", List.of(),
@@ -60,6 +61,52 @@ class AppTest {
         assertEquals(0, code);
         assertEquals("A\nB\nC\n", out.toString(StandardCharsets.UTF_8));
         assertEquals("", err.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void mainRunPrintsReverseDeps() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int code = Main.run(
+            new String[] {
+                "--package", "C",
+                "--repo", "fixtures/repos/linear.txt",
+                "--version", "1",
+                "--test-repo",
+                "--reverse-deps"
+            },
+            new PrintStream(out, true, StandardCharsets.UTF_8),
+            new PrintStream(err, true, StandardCharsets.UTF_8)
+        );
+
+        assertEquals(0, code);
+        assertEquals("B\nA\n", out.toString(StandardCharsets.UTF_8));
+        assertEquals("", err.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void mainRunRejectsReverseWithoutTestRepo() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int code = Main.run(
+            new String[] {
+                "--package", "requests",
+                "--repo", "https://pypi.org/simple/",
+                "--version", "2.31.0",
+                "--reverse-deps"
+            },
+            new PrintStream(out, true, StandardCharsets.UTF_8),
+            new PrintStream(err, true, StandardCharsets.UTF_8)
+        );
+
+        assertEquals(1, code);
+        assertEquals("", out.toString(StandardCharsets.UTF_8));
+        assertTrue(
+            err.toString(StandardCharsets.UTF_8)
+                .contains("reverse dependencies require --test-repo")
+        );
     }
 
     @Test

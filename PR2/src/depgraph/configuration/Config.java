@@ -9,12 +9,14 @@ public class Config {
     String version;
     boolean testRepo;
     boolean asciiTree;
+    boolean reverseDeps;
 
     public String dump() {
         return "package=" + packageName + "\n"
             + "repo=" + repo + "\n"
             + "version=" + version + "\n"
             + "test-repo=" + testRepo + "\n"
-            + "ascii-tree=" + asciiTree;
+            + "ascii-tree=" + asciiTree + "\n"
+            + "reverse-deps=" + reverseDeps;
     }
 }

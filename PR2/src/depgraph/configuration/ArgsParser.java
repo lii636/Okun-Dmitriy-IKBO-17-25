@@ -14,6 +14,7 @@ public class ArgsParser {
     private static final String VERSION = "--version";
     private static final String TEST_REPO = "--test-repo";
     private static final String ASCII_TREE = "--ascii-tree";
+    private static final String REVERSE_DEPS = "--reverse-deps";
     private static final String HTTP = "http://";
     private static final String HTTPS = "https://";
 
@@ -23,6 +24,7 @@ public class ArgsParser {
         String version = null;
         boolean testRepo = false;
         boolean asciiTree = false;
+        boolean reverseDeps = false;
         int index = 0;
         while (index < args.length) {
             String option = args[index];
@@ -39,6 +41,11 @@ public class ArgsParser {
                 index += 1;
                 continue;
             }
+            if (REVERSE_DEPS.equals(option)) {
+                reverseDeps = true;
+                index += 1;
+                continue;
+            }
             String value = valueAfter(args, index);
             if (PACKAGE.equals(option)) {
                 packageName = value;
@@ -51,7 +58,14 @@ public class ArgsParser {
             }
             index += 2;
         }
-        return new Start(buildConfig(packageName, repo, version, testRepo, asciiTree));
+        return new Start(buildConfig(
+            packageName,
+            repo,
+            version,
+            testRepo,
+            asciiTree,
+            reverseDeps
+        ));
     }
 
     private Config buildConfig(
@@ -59,7 +73,8 @@ public class ArgsParser {
         String repo,
         String version,
         boolean testRepo,
-        boolean asciiTree
+        boolean asciiTree,
+        boolean reverseDeps
     ) {
         requirePresent(PACKAGE, packageName);
         requirePresent(REPO, repo);
@@ -87,7 +102,14 @@ public class ArgsParser {
                 "repo must be an http(s) URL when --test-repo is not set"
             );
         }
-        return new Config(trimmedPackage, trimmedRepo, trimmedVersion, testRepo, asciiTree);
+        return new Config(
+            trimmedPackage,
+            trimmedRepo,
+            trimmedVersion,
+            testRepo,
+            asciiTree,
+            reverseDeps
+        );
     }
 
     private void requirePresent(String option, String value) {

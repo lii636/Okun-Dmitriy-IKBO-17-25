@@ -36,7 +36,8 @@ class ArgsParserTest {
             repo=https://pypi.org/simple/
             version=2.31.0
             test-repo=false
-            ascii-tree=false""",
+            ascii-tree=false
+            reverse-deps=false""",
             config.dump()
         );
     }
@@ -50,20 +51,23 @@ class ArgsParserTest {
                 "--repo", "fixtures/repos/sample.txt",
                 "--version", "1",
                 "--test-repo",
-                "--ascii-tree"
+                "--ascii-tree",
+                "--reverse-deps"
             })
         );
 
         Config config = start.config();
         assertTrue(config.testRepo());
         assertTrue(config.asciiTree());
+        assertTrue(config.reverseDeps());
         assertEquals(
             """
             package=A
             repo=fixtures/repos/sample.txt
             version=1
             test-repo=true
-            ascii-tree=true""",
+            ascii-tree=true
+            reverse-deps=true""",
             config.dump()
         );
     }

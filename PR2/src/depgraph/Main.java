@@ -16,7 +16,7 @@ public class Main {
     private static final int ERROR = 1;
     private static final String USAGE =
         "Usage: depgraph --package NAME --repo URL_OR_PATH --version VERSION"
-            + " [--test-repo] [--ascii-tree] [--help]";
+            + " [--test-repo] [--reverse-deps] [--ascii-tree] [--help]";
 
     public static void main(String[] args) {
         int code = run(args, System.out, System.err);
