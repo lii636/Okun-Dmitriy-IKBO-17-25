@@ -11,16 +11,30 @@ public final class PypiUrl {
     private PypiUrl() {
     }
 
+    public static URI jsonMetadata(String repo, String packageName) {
+        return create(root(repo) + "/pypi/" + packageName + "/json");
+    }
+
     public static URI jsonMetadata(String repo, String packageName, String version) {
-        String root = trimTrailingSlashes(repo.trim());
-        String lower = root.toLowerCase(Locale.ROOT);
-        if (lower.endsWith(SIMPLE_SUFFIX)) {
-            root = root.substring(0, root.length() - SIMPLE_SUFFIX.length());
+        if (version == null || version.isBlank()) {
+            return jsonMetadata(repo, packageName);
         }
-        if (root.isEmpty()) {
+        return create(root(repo) + "/pypi/" + packageName + "/" + version + "/json");
+    }
+
+    private static String root(String repo) {
+        String value = trimTrailingSlashes(repo.trim());
+        String lower = value.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(SIMPLE_SUFFIX)) {
+            value = value.substring(0, value.length() - SIMPLE_SUFFIX.length());
+        }
+        if (value.isEmpty()) {
             throw new DepgraphException("empty repository root");
         }
-        String path = root + "/pypi/" + packageName + "/" + version + "/json";
+        return value;
+    }
+
+    private static URI create(String path) {
         try {
             return URI.create(path);
         } catch (IllegalArgumentException exception) {

@@ -1,0 +1,5 @@
+# diamond A -> B,C -> D
+A: B C
+B: D
+C: D
+D:

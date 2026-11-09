@@ -24,4 +24,16 @@ class PypiUrlTest {
             PypiUrl.jsonMetadata("https://pypi.org", "idna", "3.0").toString()
         );
     }
+
+    @Test
+    void blankVersionUsesPackageLevelJson() {
+        assertEquals(
+            "https://pypi.org/pypi/urllib3/json",
+            PypiUrl.jsonMetadata("https://pypi.org/simple/", "urllib3", "").toString()
+        );
+        assertEquals(
+            "https://pypi.org/pypi/urllib3/json",
+            PypiUrl.jsonMetadata("https://pypi.org/simple/", "urllib3").toString()
+        );
+    }
 }
