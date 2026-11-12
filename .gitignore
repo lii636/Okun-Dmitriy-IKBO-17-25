@@ -7,6 +7,7 @@ obj/
 target/
 dist/
 *.class
+**/gradle/wrapper/gradle-wrapper.jar
 
 # Редактор
 .idea/
