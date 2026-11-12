@@ -19,75 +19,87 @@ public class ArgsParser {
     private static final String HTTPS = "https://";
 
     public Result parse(String[] args) {
-        String packageName = null;
-        String repo = null;
-        String version = null;
-        boolean testRepo = false;
-        boolean asciiTree = false;
-        boolean reverseDeps = false;
+        ParseState state = new ParseState();
         int index = 0;
         while (index < args.length) {
             String option = args[index];
             if (HELP.equals(option)) {
                 return new Help();
             }
-            if (TEST_REPO.equals(option)) {
-                testRepo = true;
-                index += 1;
+            Integer flagsConsumed = applyFlag(option, state);
+            if (flagsConsumed != null) {
+                index += flagsConsumed;
                 continue;
             }
-            if (ASCII_TREE.equals(option)) {
-                asciiTree = true;
-                index += 1;
-                continue;
-            }
-            if (REVERSE_DEPS.equals(option)) {
-                reverseDeps = true;
-                index += 1;
-                continue;
-            }
-            String value = valueAfter(args, index);
-            if (PACKAGE.equals(option)) {
-                packageName = value;
-            } else if (REPO.equals(option)) {
-                repo = value;
-            } else if (VERSION.equals(option)) {
-                version = value;
-            } else {
-                reject(option);
-            }
+            applyValuedOption(option, valueAfter(args, index), state);
             index += 2;
         }
-        return new Start(buildConfig(
-            packageName,
-            repo,
-            version,
-            testRepo,
-            asciiTree,
-            reverseDeps
-        ));
+        return new Start(buildConfig(state));
     }
 
-    private Config buildConfig(
-        String packageName,
-        String repo,
-        String version,
-        boolean testRepo,
-        boolean asciiTree,
-        boolean reverseDeps
-    ) {
-        requirePresent(PACKAGE, packageName);
-        requirePresent(REPO, repo);
-        requirePresent(VERSION, version);
-        String trimmedPackage = packageName.trim();
+    private Integer applyFlag(String option, ParseState state) {
+        if (TEST_REPO.equals(option)) {
+            state.testRepo = true;
+            return 1;
+        }
+        if (ASCII_TREE.equals(option)) {
+            state.asciiTree = true;
+            return 1;
+        }
+        if (REVERSE_DEPS.equals(option)) {
+            state.reverseDeps = true;
+            return 1;
+        }
+        return null;
+    }
+
+    private void applyValuedOption(String option, String value, ParseState state) {
+        if (PACKAGE.equals(option)) {
+            state.packageName = value;
+        } else if (REPO.equals(option)) {
+            state.repo = value;
+        } else if (VERSION.equals(option)) {
+            state.version = value;
+        } else {
+            reject(option);
+        }
+    }
+
+    private Config buildConfig(ParseState state) {
+        requirePresent(PACKAGE, state.packageName);
+        requirePresent(REPO, state.repo);
+        requirePresent(VERSION, state.version);
+        String trimmedPackage = requireNonBlank(
+            PACKAGE,
+            state.packageName,
+            "empty package name"
+        );
+        String trimmedRepo = requireRepoValue(state.repo, state.testRepo);
+        String trimmedVersion = requireNonBlank(
+            VERSION,
+            state.version,
+            "empty version"
+        );
+        return new Config(
+            trimmedPackage,
+            trimmedRepo,
+            trimmedVersion,
+            state.testRepo,
+            state.asciiTree,
+            state.reverseDeps
+        );
+    }
+
+    private String requireNonBlank(String option, String value, String emptyMessage) {
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            throw new DepgraphException(emptyMessage);
+        }
+        return trimmed;
+    }
+
+    private String requireRepoValue(String repo, boolean testRepo) {
         String trimmedRepo = repo.trim();
-        String trimmedVersion = version.trim();
-        if (trimmedPackage.isEmpty()) {
-            throw new DepgraphException("empty package name");
-        }
-        if (trimmedVersion.isEmpty()) {
-            throw new DepgraphException("empty version");
-        }
         if (trimmedRepo.isEmpty()) {
             throw new DepgraphException(
                 testRepo
@@ -95,21 +107,20 @@ public class ArgsParser {
                     : "empty repo"
             );
         }
+        validateRepo(trimmedRepo, testRepo);
+        return trimmedRepo;
+    }
+
+    private void validateRepo(String trimmedRepo, boolean testRepo) {
         if (testRepo) {
             validatePath(trimmedRepo);
-        } else if (!isHttpUrl(trimmedRepo)) {
+            return;
+        }
+        if (!isHttpUrl(trimmedRepo)) {
             throw new DepgraphException(
                 "repo must be an http(s) URL when --test-repo is not set"
             );
         }
-        return new Config(
-            trimmedPackage,
-            trimmedRepo,
-            trimmedVersion,
-            testRepo,
-            asciiTree,
-            reverseDeps
-        );
     }
 
     private void requirePresent(String option, String value) {
@@ -146,6 +157,15 @@ public class ArgsParser {
     private void reject(String argument) {
         String kind = argument.startsWith("--") ? "unknown option: " : "unexpected argument: ";
         throw new DepgraphException(kind + argument);
+    }
+
+    private static final class ParseState {
+        private String packageName;
+        private String repo;
+        private String version;
+        private boolean testRepo;
+        private boolean asciiTree;
+        private boolean reverseDeps;
     }
 
     public sealed interface Result permits Help, Start {
