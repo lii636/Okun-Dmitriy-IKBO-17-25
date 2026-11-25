@@ -55,7 +55,10 @@ public class InstructionDecoder {
         return switch (opcode) {
             case Opcodes.LOAD -> new Load(
                 fieldB,
-                (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS)) & LOAD_C_MASK)
+                signExtend(
+                    (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS)) & LOAD_C_MASK),
+                    Opcodes.LOAD_C_BITS
+                )
             );
             case Opcodes.READ -> new Read(
                 fieldB,
@@ -73,5 +76,13 @@ public class InstructionDecoder {
             );
             default -> throw new UvmException("unknown opcode: " + opcode);
         };
+    }
+
+    private int signExtend(int value, int bits) {
+        int signBit = 1 << (bits - 1);
+        if ((value & signBit) == 0) {
+            return value;
+        }
+        return value | ~((1 << bits) - 1);
     }
 }

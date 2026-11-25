@@ -90,6 +90,48 @@ class MainTest {
     }
 
     @Test
+    void runAbsDemoWritesExpectedDump() throws Exception {
+        Path binary = tempDir.resolve("abs.bin");
+        Path dump = tempDir.resolve("abs.xml");
+
+        assertEquals(
+            0,
+            Main.run(
+                new String[] {
+                    "assemble",
+                    "fixtures/asm/abs_demo.asm",
+                    binary.toString()
+                },
+                new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8),
+                new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8)
+            )
+        );
+
+        assertEquals(
+            0,
+            Main.run(
+                new String[] {
+                    "run",
+                    binary.toString(),
+                    dump.toString(),
+                    "10-12"
+                },
+                new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8),
+                new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8)
+            )
+        );
+
+        String expected = Files.readString(
+            Path.of("fixtures/expected/abs_demo_dump.xml"),
+            StandardCharsets.UTF_8
+        ).replace("\r\n", "\n").trim();
+        String actual = Files.readString(dump, StandardCharsets.UTF_8)
+            .replace("\r\n", "\n")
+            .trim();
+        assertEquals(expected, actual);
+    }
+
+    @Test
     void missingSourceReportsError() {
         ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
         int code = Main.run(

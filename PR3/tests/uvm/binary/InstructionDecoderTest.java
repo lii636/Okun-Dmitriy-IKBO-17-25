@@ -26,4 +26,10 @@ class InstructionDecoderTest {
         );
         assertEquals(original, decoder.decodeAll(encoder.encodeAll(original)));
     }
+
+    @Test
+    void roundTripsSignedLoadConstant() {
+        List<Instruction> original = List.of(new Load(0, -7));
+        assertEquals(original, decoder.decodeAll(encoder.encodeAll(original)));
+    }
 }

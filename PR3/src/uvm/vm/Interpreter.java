@@ -34,18 +34,30 @@ public class Interpreter {
                 write.memoryAddress(),
                 state.register(write.sourceRegister())
             );
-            case Abs ignored -> throw new UvmException(
-                "ABS is not implemented in stage 3"
-            );
+            case Abs abs -> executeAbs(abs, state);
         }
     }
 
     private void executeRead(Read read, MachineState state) {
-        int base = state.register(read.baseRegister());
-        int address = base + read.offset();
+        int address = state.register(read.baseRegister()) + read.offset();
+        checkDataAddress(address);
+        state.setRegister(read.destination(), state.data(address));
+    }
+
+    private void executeAbs(Abs abs, MachineState state) {
+        int address = abs.memoryAddress();
+        checkDataAddress(address);
+        int value = state.data(address);
+        state.setRegister(abs.destinationRegister(), absolute(value));
+    }
+
+    private int absolute(int value) {
+        return value < 0 ? -value : value;
+    }
+
+    private void checkDataAddress(int address) {
         if (address < 0 || address >= MachineState.DATA_MEMORY_SIZE) {
             throw new UvmException("data address out of range: " + address);
         }
-        state.setRegister(read.destination(), state.data(address));
     }
 }

@@ -55,4 +55,12 @@ class AssemblerParserTest {
             () -> parser.parseLines(List.of("LOAD 128, 1"))
         );
     }
+
+    @Test
+    void parsesSignedLoadConstant() {
+        assertEquals(
+            List.of(new Load(0, -7)),
+            parser.parseLines(List.of("LOAD 0, -7"))
+        );
+    }
 }

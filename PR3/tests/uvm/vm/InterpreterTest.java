@@ -1,7 +1,6 @@
 package uvm.vm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -11,8 +10,6 @@ import org.junit.jupiter.api.Test;
 import uvm.asm.AssemblerParser;
 import uvm.binary.InstructionDecoder;
 import uvm.binary.InstructionEncoder;
-import uvm.exception.UvmException;
-import uvm.ir.Abs;
 import uvm.ir.Instruction;
 
 class InterpreterTest {
@@ -35,8 +32,16 @@ class InterpreterTest {
     }
 
     @Test
-    void rejectsAbsInStage3() {
-        byte[] code = encoder.encodeAll(List.of(new Abs(1, 0)));
-        assertThrows(UvmException.class, () -> interpreter.run(code));
+    void computesAbsForNegativeZeroPositive() {
+        List<Instruction> program = parser.parseFile(
+            Path.of("fixtures/asm/abs_demo.asm")
+        );
+        MachineState state = interpreter.run(encoder.encodeAll(program));
+        assertEquals(-7, state.data(0));
+        assertEquals(0, state.data(1));
+        assertEquals(5, state.data(2));
+        assertEquals(7, state.data(10));
+        assertEquals(0, state.data(11));
+        assertEquals(5, state.data(12));
     }
 }

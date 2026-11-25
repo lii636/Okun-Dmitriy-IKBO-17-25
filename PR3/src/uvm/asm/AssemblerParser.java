@@ -65,7 +65,12 @@ public class AssemblerParser {
     private Load parseLoad(int[] args, int lineNumber) {
         requireArity(MNEMONIC_LOAD, args, LOAD_ARGS, lineNumber);
         int register = requireRange(args[0], Opcodes.B_BITS, "register", lineNumber);
-        int constant = requireRange(args[1], Opcodes.LOAD_C_BITS, "constant", lineNumber);
+        int constant = requireSignedRange(
+            args[1],
+            Opcodes.LOAD_C_BITS,
+            "constant",
+            lineNumber
+        );
         return new Load(register, constant);
     }
 
@@ -119,18 +124,14 @@ public class AssemblerParser {
             if (token.isEmpty()) {
                 throw error(lineNumber, "empty operand");
             }
-            values[index] = parseNonNegative(token, lineNumber);
+            values[index] = parseInteger(token, lineNumber);
         }
         return values;
     }
 
-    private int parseNonNegative(String token, int lineNumber) {
+    private int parseInteger(String token, int lineNumber) {
         try {
-            int value = Integer.parseInt(token);
-            if (value < 0) {
-                throw error(lineNumber, "negative number: " + token);
-            }
-            return value;
+            return Integer.parseInt(token);
         } catch (NumberFormatException exception) {
             throw error(lineNumber, "not an integer: " + token);
         }
@@ -147,10 +148,22 @@ public class AssemblerParser {
 
     private int requireRange(int value, int bits, String name, int lineNumber) {
         int max = (1 << bits) - 1;
-        if (value > max) {
+        if (value < 0 || value > max) {
             throw error(
                 lineNumber,
                 name + " out of range 0.." + max + ": " + value
+            );
+        }
+        return value;
+    }
+
+    private int requireSignedRange(int value, int bits, String name, int lineNumber) {
+        int min = -(1 << (bits - 1));
+        int max = (1 << (bits - 1)) - 1;
+        if (value < min || value > max) {
+            throw error(
+                lineNumber,
+                name + " out of range " + min + ".." + max + ": " + value
             );
         }
         return value;

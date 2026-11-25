@@ -55,9 +55,10 @@ public class InstructionEncoder {
     }
 
     private long packLoad(Load load) {
+        long constantBits = load.constant() & ((1L << Opcodes.LOAD_C_BITS) - 1);
         return Opcodes.LOAD
             | ((long) load.register() << Opcodes.A_BITS)
-            | ((long) load.constant() << (Opcodes.A_BITS + Opcodes.B_BITS));
+            | (constantBits << (Opcodes.A_BITS + Opcodes.B_BITS));
     }
 
     private long packRead(Read read) {
