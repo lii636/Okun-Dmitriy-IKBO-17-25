@@ -5,7 +5,7 @@ import uvm.exception.UvmException;
 
 public class MachineState {
     public static final int REGISTER_COUNT = 1 << Opcodes.B_BITS;
-    public static final int DATA_MEMORY_SIZE = 4096;
+    public static final int DATA_MEMORY_SIZE = 1 << Opcodes.WRITE_C_BITS;
 
     private final int[] registers = new int[REGISTER_COUNT];
     private final int[] dataMemory = new int[DATA_MEMORY_SIZE];
@@ -16,7 +16,7 @@ public class MachineState {
     }
 
     public byte[] commandMemory() {
-        return commandMemory;
+        return commandMemory.clone();
     }
 
     public int register(int index) {

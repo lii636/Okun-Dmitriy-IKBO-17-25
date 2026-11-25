@@ -21,6 +21,11 @@ public class InstructionDecoder {
     private static final int READ_D_MASK = (1 << Opcodes.READ_D_BITS) - 1;
     private static final int WRITE_C_MASK = (1 << Opcodes.WRITE_C_BITS) - 1;
     private static final int ABS_C_MASK = (1 << Opcodes.ABS_C_BITS) - 1;
+    private static final int LOAD_USED_BITS = Opcodes.A_BITS + Opcodes.B_BITS + Opcodes.LOAD_C_BITS;
+    private static final int READ_USED_BITS = Opcodes.A_BITS + Opcodes.B_BITS
+        + Opcodes.READ_C_BITS + Opcodes.READ_D_BITS;
+    private static final int ADDRESS_USED_BITS = Opcodes.A_BITS + Opcodes.B_BITS
+        + Opcodes.WRITE_C_BITS;
 
     public List<Instruction> decodeAll(byte[] machineCode) {
         if (machineCode.length % Opcodes.COMMAND_SIZE_BYTES != 0) {
@@ -53,29 +58,55 @@ public class InstructionDecoder {
         int opcode = (int) (packed & A_MASK);
         int fieldB = (int) ((packed >> Opcodes.A_BITS) & B_MASK);
         return switch (opcode) {
-            case Opcodes.LOAD -> new Load(
-                fieldB,
-                signExtend(
-                    (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS)) & LOAD_C_MASK),
-                    Opcodes.LOAD_C_BITS
-                )
-            );
-            case Opcodes.READ -> new Read(
-                fieldB,
-                (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS)) & READ_C_MASK),
-                (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS + Opcodes.READ_C_BITS))
-                    & READ_D_MASK)
-            );
-            case Opcodes.WRITE -> new Write(
-                fieldB,
-                (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS)) & WRITE_C_MASK)
-            );
-            case Opcodes.ABS -> new Abs(
-                fieldB,
-                (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS)) & ABS_C_MASK)
-            );
+            case Opcodes.LOAD -> decodeLoad(packed, fieldB);
+            case Opcodes.READ -> decodeRead(packed, fieldB);
+            case Opcodes.WRITE -> decodeWrite(packed, fieldB);
+            case Opcodes.ABS -> decodeAbs(packed, fieldB);
             default -> throw new UvmException("unknown opcode: " + opcode);
         };
+    }
+
+    private Load decodeLoad(long packed, int fieldB) {
+        requireReservedBitsClear(packed, LOAD_USED_BITS);
+        return new Load(
+            fieldB,
+            signExtend(
+                (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS)) & LOAD_C_MASK),
+                Opcodes.LOAD_C_BITS
+            )
+        );
+    }
+
+    private Read decodeRead(long packed, int fieldB) {
+        requireReservedBitsClear(packed, READ_USED_BITS);
+        return new Read(
+            fieldB,
+            (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS)) & READ_C_MASK),
+            (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS + Opcodes.READ_C_BITS))
+                & READ_D_MASK)
+        );
+    }
+
+    private Write decodeWrite(long packed, int fieldB) {
+        requireReservedBitsClear(packed, ADDRESS_USED_BITS);
+        return new Write(
+            fieldB,
+            (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS)) & WRITE_C_MASK)
+        );
+    }
+
+    private Abs decodeAbs(long packed, int fieldB) {
+        requireReservedBitsClear(packed, ADDRESS_USED_BITS);
+        return new Abs(
+            fieldB,
+            (int) ((packed >> (Opcodes.A_BITS + Opcodes.B_BITS)) & ABS_C_MASK)
+        );
+    }
+
+    private void requireReservedBitsClear(long packed, int usedBits) {
+        if ((packed >>> usedBits) != 0) {
+            throw new UvmException("reserved command bits must be zero");
+        }
     }
 
     private int signExtend(int value, int bits) {

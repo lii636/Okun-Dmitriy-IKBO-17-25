@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uvm.Opcodes;
+import uvm.exception.UvmException;
 import uvm.ir.Abs;
 import uvm.ir.Instruction;
 import uvm.ir.Load;
@@ -26,6 +27,7 @@ public class InstructionEncoder {
     }
 
     public byte[] encode(Instruction instruction) {
+        validate(instruction);
         long packed = switch (instruction) {
             case Load load -> packLoad(load);
             case Read read -> packRead(read);
@@ -33,6 +35,45 @@ public class InstructionEncoder {
             case Abs abs -> packAbs(abs);
         };
         return toLittleEndian(packed);
+    }
+
+    private void validate(Instruction instruction) {
+        switch (instruction) {
+            case Load load -> {
+                requireUnsigned(load.register(), Opcodes.B_BITS, "register");
+                requireSigned(load.constant(), Opcodes.LOAD_C_BITS, "constant");
+            }
+            case Read read -> {
+                requireUnsigned(read.baseRegister(), Opcodes.B_BITS, "base register");
+                requireUnsigned(read.destination(), Opcodes.READ_C_BITS, "destination");
+                requireUnsigned(read.offset(), Opcodes.READ_D_BITS, "offset");
+            }
+            case Write write -> {
+                requireUnsigned(write.sourceRegister(), Opcodes.B_BITS, "source register");
+                requireUnsigned(write.memoryAddress(), Opcodes.WRITE_C_BITS, "memory address");
+            }
+            case Abs abs -> {
+                requireUnsigned(abs.destinationRegister(), Opcodes.B_BITS, "destination register");
+                requireUnsigned(abs.memoryAddress(), Opcodes.ABS_C_BITS, "memory address");
+            }
+        }
+    }
+
+    private void requireUnsigned(int value, int bits, String field) {
+        int maximum = (1 << bits) - 1;
+        if (value < 0 || value > maximum) {
+            throw new UvmException(field + " out of range 0.." + maximum + ": " + value);
+        }
+    }
+
+    private void requireSigned(int value, int bits, String field) {
+        int minimum = -(1 << (bits - 1));
+        int maximum = (1 << (bits - 1)) - 1;
+        if (value < minimum || value > maximum) {
+            throw new UvmException(
+                field + " out of range " + minimum + ".." + maximum + ": " + value
+            );
+        }
     }
 
     public String toByteDump(byte[] bytes) {

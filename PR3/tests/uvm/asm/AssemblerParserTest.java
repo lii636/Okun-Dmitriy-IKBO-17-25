@@ -63,4 +63,38 @@ class AssemblerParserTest {
             parser.parseLines(List.of("LOAD 0, -7"))
         );
     }
+
+    @Test
+    void acceptsInstructionFieldBoundaries() {
+        assertEquals(
+            List.of(
+                new Load(127, -32768),
+                new Read(127, 127, 16383),
+                new Write(127, 8388607),
+                new Abs(127, 8388607)
+            ),
+            parser.parseLines(List.of(
+                "LOAD 127, -32768",
+                "READ 127, 127, 16383",
+                "WRITE 127, 8388607",
+                "ABS 127, 8388607"
+            ))
+        );
+    }
+
+    @Test
+    void rejectsValuesPastInstructionFieldBoundaries() {
+        assertThrows(
+            UvmException.class,
+            () -> parser.parseLines(List.of("LOAD 0, -32769"))
+        );
+        assertThrows(
+            UvmException.class,
+            () -> parser.parseLines(List.of("READ 0, 0, 16384"))
+        );
+        assertThrows(
+            UvmException.class,
+            () -> parser.parseLines(List.of("WRITE 0, 8388608"))
+        );
+    }
 }

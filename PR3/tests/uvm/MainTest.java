@@ -147,4 +147,44 @@ class MainTest {
         assertEquals(1, code);
         assertTrue(errBuffer.toString(StandardCharsets.UTF_8).contains("cannot read source"));
     }
+
+    @Test
+    void missingBinaryReportsError() {
+        ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
+        int code = Main.run(
+            new String[] {
+                "run",
+                tempDir.resolve("missing.bin").toString(),
+                tempDir.resolve("dump.xml").toString(),
+                "0-0"
+            },
+            new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8),
+            new PrintStream(errBuffer, true, StandardCharsets.UTF_8)
+        );
+        assertEquals(1, code);
+        assertTrue(errBuffer.toString(StandardCharsets.UTF_8).contains("cannot read binary"));
+    }
+
+    @Test
+    void corruptBinaryReportsErrorWithoutWritingDump() throws Exception {
+        Path binary = tempDir.resolve("corrupt.bin");
+        Path dump = tempDir.resolve("dump.xml");
+        Files.write(binary, new byte[] {1, 2, 3, 4});
+        ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
+
+        int code = Main.run(
+            new String[] {
+                "run",
+                binary.toString(),
+                dump.toString(),
+                "0-0"
+            },
+            new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8),
+            new PrintStream(errBuffer, true, StandardCharsets.UTF_8)
+        );
+
+        assertEquals(1, code);
+        assertTrue(errBuffer.toString(StandardCharsets.UTF_8).contains("multiple of 5"));
+        assertTrue(Files.notExists(dump));
+    }
 }

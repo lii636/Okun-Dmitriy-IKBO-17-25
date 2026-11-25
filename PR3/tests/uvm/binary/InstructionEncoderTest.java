@@ -2,6 +2,7 @@ package uvm.binary;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,6 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import uvm.asm.AssemblerParser;
+import uvm.exception.UvmException;
 import uvm.ir.Abs;
 import uvm.ir.Instruction;
 import uvm.ir.Load;
@@ -60,6 +62,15 @@ class InstructionEncoderTest {
             .trim();
         String actual = String.join("\n", encoder.toCommandDumps(program));
         assertEquals(expected, actual);
+    }
+
+    @Test
+    void rejectsInvalidDirectIrInsteadOfTruncatingFields() {
+        assertThrows(UvmException.class, () -> encoder.encode(new Load(128, 0)));
+        assertThrows(UvmException.class, () -> encoder.encode(new Load(0, 32768)));
+        assertThrows(UvmException.class, () -> encoder.encode(new Read(0, 0, 16384)));
+        assertThrows(UvmException.class, () -> encoder.encode(new Write(0, 1 << 23)));
+        assertThrows(UvmException.class, () -> encoder.encode(new Abs(-1, 0)));
     }
 
     private static byte[] bytes(int... values) {
