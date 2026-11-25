@@ -10,12 +10,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class MainTest {
+    @TempDir
+    Path tempDir;
+
     @Test
-    void assembleTestModePrintsSpecIr() throws Exception {
-        String expected = Files.readString(
-            Path.of("fixtures/expected/spec_ir.txt"),
+    void assembleTestModePrintsSizeAndSpecBytes() throws Exception {
+        Path output = tempDir.resolve("out.bin");
+        String expectedBytes = Files.readString(
+            Path.of("fixtures/expected/spec_bytes.txt"),
             StandardCharsets.UTF_8
         ).replace("\r\n", "\n").trim();
 
@@ -25,7 +30,7 @@ class MainTest {
             new String[] {
                 "assemble",
                 "fixtures/asm/spec_tests.asm",
-                "out.bin",
+                output.toString(),
                 "--test"
             },
             new PrintStream(outBuffer, true, StandardCharsets.UTF_8),
@@ -34,10 +39,11 @@ class MainTest {
 
         assertEquals(0, code);
         assertEquals(
-            expected,
+            "20\n" + expectedBytes,
             outBuffer.toString(StandardCharsets.UTF_8).replace("\r\n", "\n").trim()
         );
         assertTrue(errBuffer.toString(StandardCharsets.UTF_8).isEmpty());
+        assertEquals(20, Files.size(output));
     }
 
     @Test

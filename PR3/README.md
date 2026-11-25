@@ -1,24 +1,23 @@
-# UVM — ассемблер → IR
+# UVM — IR → машинный код
 
-CLI-ассемблер учебной виртуальной машины (УВМ), вариант 18.  
-Разбор языка ассемблера и перевод в промежуточное представление (IR). Машинный код пока не пишется.
+Ассемблер УВМ (вариант 18): разбор ASM → IR → упаковка 5-байтных команд и запись `.bin`.
 
 ## Функции и настройки
 
 ### Язык ассемблера
 
-Один оператор на строку: `мнемоника arg, arg, …`.  
-Комментарии: `#` или `;` до конца строки. Пустые строки игнорируются.  
-Аргументы — неотрицательные целые; пробелы вокруг запятых допустимы.
+| Мнемоника | Синтаксис | Поля |
+|-----------|-----------|------|
+| `LOAD` | `LOAD reg, const` | A=14, B=reg, C=const |
+| `READ` | `READ dst, base, off` | A=5, B=base, C=dst, D=off |
+| `WRITE` | `WRITE src, addr` | A=6, B=src, C=addr |
+| `ABS` | `ABS dst, addr` | A=15, B=dst, C=addr |
 
-| Мнемоника | Синтаксис | Поля IR | Смысл |
-|-----------|-----------|---------|--------|
-| `LOAD` | `LOAD reg, const` | A=14, B=reg, C=const | константа → регистр |
-| `READ` | `READ dst, base, off` | A=5, B=base, C=dst, D=off | mem[reg[base]+off] → reg[dst] |
-| `WRITE` | `WRITE src, addr` | A=6, B=src, C=addr | reg[src] → mem[addr] |
-| `ABS` | `ABS dst, addr` | A=15, B=dst, C=addr | abs(mem[addr]) → reg[dst] |
+Комментарии: `#` / `;`. Один оператор на строку.
 
-Диапазоны полей ограничены шириной битов из спецификации УВМ.
+### Машинный код
+
+Каждая команда — 5 байт, little-endian. Поля упакованы от младших битов (A с бита 0).
 
 ### CLI
 
@@ -29,37 +28,22 @@ uvm --help
 
 | Аргумент | Описание |
 |----------|----------|
-| `input.asm` | исходный текст на языке ассемблера |
-| `output.bin` | путь к двоичному результату (принимается; запись бинарника — позже) |
-| `--test` | печать IR в формате полей спецификации на stdout |
+| `input.asm` | исходник |
+| `output.bin` | двоичный результат |
+| `--test` | печать байтов каждой команды (`0x.., 0x.., …`) |
 
-Пример вывода `--test`:
-
-```text
-LOAD A=14 B=8 C=266
-READ A=5 B=24 C=109 D=499
-WRITE A=6 B=7 C=469
-ABS A=15 B=33 C=461
-```
-
-### Пакеты
-
-- `uvm.configuration` — CLI / immutable `Config`
-- `uvm.asm` — парсер языка
-- `uvm.ir` — records инструкций
-- `uvm.application` — оркестрация assemble
+Всегда печатается размер выходного файла в байтах (первая строка stdout).
 
 ## Сборка и тесты
 
-Требуется JDK 21+.
+JDK 21+.
 
 ```bash
 ./gradlew test
-./gradlew installDist
 ./run.sh assemble fixtures/asm/spec_tests.asm out.bin --test
 ```
 
-На Windows (PowerShell), из каталога этапа:
+PowerShell:
 
 ```powershell
 .\gradlew.bat test --console=plain
@@ -67,15 +51,15 @@ ABS A=15 B=33 C=461
 .\build\install\uvm\bin\uvm.bat assemble fixtures\asm\spec_tests.asm out.bin --test
 ```
 
-Демо-скрипт (Git Bash / WSL): `scripts/assemble_test.sh`.
-
 ## Примеры
 
-Фикстура со всеми тестами спецификации: `fixtures/asm/spec_tests.asm`.  
-Эталон IR: `fixtures/expected/spec_ir.txt`.
+Фикстура: `fixtures/asm/spec_tests.asm` (все 4 теста спецификации).  
+Эталон байтов: `fixtures/expected/spec_bytes.txt`.
 
-```bash
-./run.sh assemble fixtures/asm/spec_tests.asm /tmp/out.bin --test
+```text
+20
+0x8E, 0x50, 0x08, 0x00, 0x00
+0x85, 0x69, 0xCF, 0x07, 0x00
+0x76, 0xA8, 0x0E, 0x00, 0x00
+0x1F, 0x6A, 0x0E, 0x00, 0x00
 ```
-
-Ожидаемый stdout совпадает с `fixtures/expected/spec_ir.txt`.

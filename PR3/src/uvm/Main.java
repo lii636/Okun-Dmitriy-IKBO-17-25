@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import uvm.application.AssemblerApp;
 import uvm.application.Session;
 import uvm.asm.AssemblerParser;
+import uvm.binary.InstructionEncoder;
 import uvm.configuration.ArgsParser;
 import uvm.configuration.Config;
 import uvm.exception.UvmException;
@@ -43,7 +44,8 @@ public final class Main {
             return SUCCESS;
         }
         Config config = ((ArgsParser.Start) result).config();
-        new AssemblerApp(config, new AssemblerParser()).run(session);
+        new AssemblerApp(config, new AssemblerParser(), new InstructionEncoder())
+            .run(session);
         return SUCCESS;
     }
 }
