@@ -21,7 +21,7 @@ class ArgsParserTest {
             "assemble", "in.asm", "out.bin", "--test"
         });
         ArgsParser.Start start = assertInstanceOf(ArgsParser.Start.class, result);
-        Config config = start.config();
+        AssembleConfig config = assertInstanceOf(AssembleConfig.class, start.config());
         assertEquals(Path.of("in.asm"), config.inputAsm());
         assertEquals(Path.of("out.bin"), config.outputBin());
         assertTrue(config.testMode());
@@ -33,7 +33,21 @@ class ArgsParserTest {
             "assemble", "a.asm", "b.bin"
         });
         ArgsParser.Start start = assertInstanceOf(ArgsParser.Start.class, result);
-        assertFalse(start.config().testMode());
+        AssembleConfig config = assertInstanceOf(AssembleConfig.class, start.config());
+        assertFalse(config.testMode());
+    }
+
+    @Test
+    void parsesRunWithDumpRange() {
+        ArgsParser.Result result = parser.parse(new String[] {
+            "run", "prog.bin", "dump.xml", "100-102"
+        });
+        ArgsParser.Start start = assertInstanceOf(ArgsParser.Start.class, result);
+        RunConfig config = assertInstanceOf(RunConfig.class, start.config());
+        assertEquals(Path.of("prog.bin"), config.programBin());
+        assertEquals(Path.of("dump.xml"), config.dumpXml());
+        assertEquals(100, config.dumpFrom());
+        assertEquals(102, config.dumpTo());
     }
 
     @Test
@@ -54,10 +68,18 @@ class ArgsParserTest {
     }
 
     @Test
+    void rejectsInvalidDumpRange() {
+        assertThrows(
+            UvmException.class,
+            () -> parser.parse(new String[] {"run", "a.bin", "d.xml", "10"})
+        );
+    }
+
+    @Test
     void rejectsUnknownSubcommand() {
         assertThrows(
             UvmException.class,
-            () -> parser.parse(new String[] {"run", "a.bin", "d.xml", "0-1"})
+            () -> parser.parse(new String[] {"fly", "a.bin"})
         );
     }
 }

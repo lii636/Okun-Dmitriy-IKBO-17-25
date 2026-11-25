@@ -15,7 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import uvm.asm.AssemblerParser;
 import uvm.binary.InstructionEncoder;
-import uvm.configuration.Config;
+import uvm.configuration.AssembleConfig;
 
 class AssemblerAppTest {
     @TempDir
@@ -31,7 +31,7 @@ class AssemblerAppTest {
 
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(buffer, true, StandardCharsets.UTF_8);
-        Config config = new Config(
+        AssembleConfig config = new AssembleConfig(
             Path.of("fixtures/asm/spec_tests.asm"),
             output,
             true

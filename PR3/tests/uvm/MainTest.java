@@ -47,6 +47,49 @@ class MainTest {
     }
 
     @Test
+    void runCopyArrayWritesExpectedDump() throws Exception {
+        Path binary = tempDir.resolve("copy.bin");
+        Path dump = tempDir.resolve("dump.xml");
+
+        assertEquals(
+            0,
+            Main.run(
+                new String[] {
+                    "assemble",
+                    "fixtures/asm/copy_array.asm",
+                    binary.toString()
+                },
+                new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8),
+                new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8)
+            )
+        );
+
+        ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
+        int code = Main.run(
+            new String[] {
+                "run",
+                binary.toString(),
+                dump.toString(),
+                "100-102"
+            },
+            new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8),
+            new PrintStream(errBuffer, true, StandardCharsets.UTF_8)
+        );
+
+        assertEquals(0, code);
+        assertTrue(errBuffer.toString(StandardCharsets.UTF_8).isEmpty());
+
+        String expected = Files.readString(
+            Path.of("fixtures/expected/copy_array_dump.xml"),
+            StandardCharsets.UTF_8
+        ).replace("\r\n", "\n").trim();
+        String actual = Files.readString(dump, StandardCharsets.UTF_8)
+            .replace("\r\n", "\n")
+            .trim();
+        assertEquals(expected, actual);
+    }
+
+    @Test
     void missingSourceReportsError() {
         ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
         int code = Main.run(

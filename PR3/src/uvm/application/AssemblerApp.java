@@ -7,13 +7,13 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import uvm.asm.AssemblerParser;
 import uvm.binary.InstructionEncoder;
-import uvm.configuration.Config;
+import uvm.configuration.AssembleConfig;
 import uvm.exception.UvmException;
 import uvm.ir.Instruction;
 
 @RequiredArgsConstructor
 public class AssemblerApp {
-    private final Config config;
+    private final AssembleConfig config;
     private final AssemblerParser parser;
     private final InstructionEncoder encoder;
 

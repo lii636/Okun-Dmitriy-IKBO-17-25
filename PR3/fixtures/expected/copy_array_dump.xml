@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<memory from="100" to="102">
+  <cell address="100" value="10"/>
+  <cell address="101" value="20"/>
+  <cell address="102" value="30"/>
+</memory>

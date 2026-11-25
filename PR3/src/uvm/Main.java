@@ -3,11 +3,14 @@ package uvm;
 import java.io.PrintStream;
 
 import uvm.application.AssemblerApp;
+import uvm.application.InterpreterApp;
 import uvm.application.Session;
 import uvm.asm.AssemblerParser;
 import uvm.binary.InstructionEncoder;
 import uvm.configuration.ArgsParser;
+import uvm.configuration.AssembleConfig;
 import uvm.configuration.Config;
+import uvm.configuration.RunConfig;
 import uvm.exception.UvmException;
 
 public final class Main {
@@ -15,6 +18,8 @@ public final class Main {
     private static final int ERROR = 1;
     private static final String USAGE =
         "Usage: uvm assemble <input.asm> <output.bin> [--test]"
+            + System.lineSeparator()
+            + "       uvm run <program.bin> <dump.xml> <from>-<to>"
             + System.lineSeparator()
             + "       uvm --help";
 
@@ -44,8 +49,12 @@ public final class Main {
             return SUCCESS;
         }
         Config config = ((ArgsParser.Start) result).config();
-        new AssemblerApp(config, new AssemblerParser(), new InstructionEncoder())
-            .run(session);
+        if (config instanceof AssembleConfig assembleConfig) {
+            new AssemblerApp(assembleConfig, new AssemblerParser(), new InstructionEncoder())
+                .run(session);
+            return SUCCESS;
+        }
+        new InterpreterApp((RunConfig) config).run(session);
         return SUCCESS;
     }
 }
