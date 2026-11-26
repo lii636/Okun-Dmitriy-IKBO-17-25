@@ -14,6 +14,9 @@ public class ArgsParser {
     private static final int ASSEMBLE_POSITIONAL = 2;
     private static final int RUN_POSITIONAL = 3;
     private static final String RANGE_SEPARATOR = "-";
+    private static final int POSITION_0 = 0;
+    private static final int POSITION_1 = 1;
+    private static final int POSITION_2 = 2;
 
     public Result parse(String[] args) {
         if (args.length == 0) {
@@ -78,11 +81,11 @@ public class ArgsParser {
             if (token.startsWith("--")) {
                 throw new UvmException("unknown option: " + token);
             }
-            if (positionals == 0) {
+            if (positionals == POSITION_0) {
                 program = token;
-            } else if (positionals == 1) {
+            } else if (positionals == POSITION_1) {
                 dump = token;
-            } else if (positionals == 2) {
+            } else if (positionals == POSITION_2) {
                 range = token;
             } else {
                 throw new UvmException("unexpected argument: " + token);

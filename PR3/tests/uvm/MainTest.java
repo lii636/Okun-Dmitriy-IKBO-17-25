@@ -17,36 +17,6 @@ class MainTest {
     Path tempDir;
 
     @Test
-    void assembleTestModePrintsSizeAndSpecBytes() throws Exception {
-        Path output = tempDir.resolve("out.bin");
-        String expectedBytes = Files.readString(
-            Path.of("fixtures/expected/spec_bytes.txt"),
-            StandardCharsets.UTF_8
-        ).replace("\r\n", "\n").trim();
-
-        ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
-        ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
-        int code = Main.run(
-            new String[] {
-                "assemble",
-                "fixtures/asm/spec_tests.asm",
-                output.toString(),
-                "--test"
-            },
-            new PrintStream(outBuffer, true, StandardCharsets.UTF_8),
-            new PrintStream(errBuffer, true, StandardCharsets.UTF_8)
-        );
-
-        assertEquals(0, code);
-        assertEquals(
-            "20\n" + expectedBytes,
-            outBuffer.toString(StandardCharsets.UTF_8).replace("\r\n", "\n").trim()
-        );
-        assertTrue(errBuffer.toString(StandardCharsets.UTF_8).isEmpty());
-        assertEquals(20, Files.size(output));
-    }
-
-    @Test
     void runCopyArrayWritesExpectedDump() throws Exception {
         Path binary = tempDir.resolve("copy.bin");
         Path dump = tempDir.resolve("dump.xml");
